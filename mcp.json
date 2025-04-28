@@ -1,0 +1,11 @@
+{
+    "mcpServers": {
+        "test-server": {
+            "command": "C:\\Users\\gusdu\\.local\\bin\\uv.exe",
+            "args": [
+                "run",
+                "main.py"
+            ]
+        }
+    }
+}
