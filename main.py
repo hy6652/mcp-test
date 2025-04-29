@@ -1,7 +1,15 @@
-import os, requests
+import os, requests, logging
 
 from mcp.server.fastmcp import FastMCP
 from dotenv import load_dotenv
+
+# 로깅 설정
+logging.basicConfig(
+    filename='server.log',
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    encoding='utf-8'
+)
 
 load_dotenv()
 API_URL = os.getenv("YOUTUBE_API_URL")
@@ -21,17 +29,15 @@ def get_search_result(query: str) -> list:
         list: A list of dictionaries containing video details.
     """
 
-    print(f"{API_URL=}")
-    print(f"{API_KEY=}")
+    logging.info(f"Received query: {query}")
+
     # 1. Search > get video ids
     search_url = f"{API_URL}search?part=snippet&q={requests.utils.quote(query)}&type=video&maxResults=5&key={API_KEY}"
 
     search_response = requests.get(search_url)
     search_response.raise_for_status()
-    print(search_response.raise_for_status())
     search_data = search_response.json()
 
-    print(search_data)
     video_ids = [item['id']['videoId'] for item in search_data.get('items', [])]
 
     if not video_ids:
@@ -43,7 +49,6 @@ def get_search_result(query: str) -> list:
 
     video_response = requests.get(video_details_url)
     video_response.raise_for_status()
-    print(video_response.json())
 
     details_data = video_response.json()
 
@@ -64,7 +69,7 @@ def get_search_result(query: str) -> list:
             "thumbnailUrl": high_thumbnail.get('url', ''),
             "viewCount": int(view_count) if view_count is not None else None,
             "likeCount": int(like_count) if like_count is not None else None,
-            "url": f"https://www.youtube.com/watch?v={item.get('id', '')}",
+            "url": f"https://www.youtube.com/watch?v={safe_text(item.get('id', ''))}",
         }
         videos.append(video_card)
 
@@ -74,10 +79,11 @@ def get_search_result(query: str) -> list:
 
     return videos
 
-def main():
-    print("Hello, MCP Server")
-    mcp.run()
+def safe_text(text):
+    if text is None:
+        return ''
+    return str(text).encode('utf-8', errors='ignore').decode('utf-8', errors='ignore')
     # get_search_result("c# mcp")
 
 if __name__ == "__main__":
-    main()
+    mcp.run()
